@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Websocket game test{% endblock %}
+
+{% block body %}
+    <canvas id="game"></canvas>
+{% endblock %}
+{% block javascripts %}
+    <!--
+    todo: spawn players that are already connected by requesting their positions and IDs
+    this should be done in backend
+    todo: finish some kind of event listening system for player movement
+    relay this movement to all other connections
+    -->
+    <script src="/js/main.js"></script>
+{% endblock %}

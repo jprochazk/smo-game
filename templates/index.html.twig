@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <div class="input">
+        <label>
+            input:
+            <input type="text" class="input-text"><button type="button" class="send">send</button>
+        </label></div>
+    <br>
+    <label>output:</label>
+    <div class="output" style="padding:2px;">
+
+    </div>
+{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            var writeToOutput = function(msg) {
+                $('div.output').append('<span>'+msg+'</span><br>');
+            };
+            var input = $('input.input-text');
+
+            var conn = new WebSocket('ws://localhost:8080');
+            conn.onopen = function(e) {
+                writeToOutput('Connection established!');
+            };
+
+            conn.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                writeToOutput(data.message);
+            };
+
+            console.log(msgpack);
+
+            $('button.send').click(function() {
+
+                var msg = input.val();
+                var data = {
+                    message: msg
+                };
+
+                try {
+                    conn.send(JSON.stringify(data));
+                    writeToOutput('Message "'+msg+'" sent');
+                    input.val("");
+                } catch(e) {
+                    writeToOutput('Could not send message: '+msg);
+                }
+            });
+        });
+    </script>
+{% endblock %}
