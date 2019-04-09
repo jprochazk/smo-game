@@ -27,14 +27,15 @@ class WebsocketServerStartCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
+            $wsServer = new WsServer(new Messenger());
             $server = IoServer::factory(
                 new HttpServer(
-                    new WsServer(
-                        new Messenger()
-                    )
+                    $wsServer
                 ),
                 8080
             );
+
+            $wsServer->enableKeepAlive($server->loop, 5);
 
             $output->writeln(' ');
             $output->writeln(' [OK] Websocket server listening on port 8080.');

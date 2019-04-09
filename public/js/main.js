@@ -129,6 +129,14 @@ let engine = {
         }
     },
 
+    eraseEntity(type, id) {
+        if(type === 'player') {
+            console.log(engine.entities.players);
+            delete engine.entities.players[id];
+            console.log(engine.entities.players);
+        }
+    },
+
     createEntity(type, pos, id) {
         if(type === 'player') {
             engine.entities.players[id] = new Player(pos.x, pos.y, id);
@@ -199,7 +207,7 @@ let engine = {
 
         setTimeout(function() {
             engine.entities.localPlayer = new LocalPlayer(engine.canvas.width/4, engine.canvas.height/4);
-        }, 2500);
+        }, 500);
 
         try {
             connectionHandler.init();
@@ -232,6 +240,44 @@ let engine = {
 
     }
 };
+
+function autoMove(e) {
+    e.pos.lastX = e.pos.x;
+    e.pos.lastY = e.pos.y;
+
+    let xv = 1;
+    let yv = 1;
+
+    if(e.pos.x+e.speed > engine.canvas.width-100) {
+        console.log("right wall");
+        xv *= -1;
+    } else if(e.pos.x-e.speed < 100) {
+        console.log("left wall");
+        xv *= -1;
+    }
+
+    if(e.pos.y+e.speed > engine.canvas.height-100) {
+        console.log("bottom wall");
+        yv *= -1;
+    } else if(e.pos.y-e.speed < 100) {
+        console.log("top wall");
+        yv *= -1;
+    }
+
+    e.move(xv, 0);
+    e.move(0, yv);
+
+    if(e.pos.lastX !== e.pos.x || e.pos.lastY !== e.pos.y) {
+        connectionHandler.sendData({
+            'type': 'post',
+            'request': 'move',
+            'data': {
+                'UUID': e.id,
+                'pos': e.pos
+            }
+        });
+    }
+}
 
 let connectionHandler = {
     connection: null,
@@ -269,20 +315,30 @@ let connectionHandler = {
                 } else
                 if(d.event === 'entityData') {
                     let entityData = d.data;
-                    if(entityData.type === 'player') {
-                        engine.createEntity(entityData.type, entityData.pos, entityData.UUID);
-                    }
+                    engine.createEntity(entityData.type, entityData.pos, entityData.UUID);
+                } else
+                if(d.event === 'entityDelete') {
+                    console.log('entityDelete', d);
+                    let entityData = d.data;
+                    engine.eraseEntity(entityData.type, entityData.UUID);
                 }
             }
-            console.log(d);
         };
         this.connection.onopen = function(e) {
             self.getData('player');
             console.log("Connection established");
+        };
+
+        this.connection.onclose = function(e) {
+            console.log("connection closed");
         };
     },
 };
 
 $(document).ready(function() {
     engine.init();
+
+    window.addEventListener('beforeunload', function() {
+        connectionHandler.connection.close();
+    });
 });
